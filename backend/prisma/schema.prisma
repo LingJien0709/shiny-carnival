@@ -1,0 +1,45 @@
+// Prisma schema for parking reminder app with Supabase PostgreSQL
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // For migrations
+}
+
+model User {
+  id            String          @id @default(cuid())
+  displayName   String
+  discordHandle String
+  discordUserId String?         // Store Discord user ID for webhooks
+  totalRmSaved  Float           @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now()) @updatedAt
+  sessions      ParkingSession[]
+
+  @@unique([displayName])
+  @@index([discordUserId])
+}
+
+model ParkingSession {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date               String   // YYYY-MM-DD format (Asia/Kuala_Lumpur timezone)
+  startTime          DateTime
+  lastReparkTime     DateTime
+  reminderScheduledFor DateTime?
+  reminderSentAt     DateTime?
+  isActive           Boolean  @default(true)
+  timesReparked      Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
+
+  @@index([userId, date, isActive])
+  @@index([reminderScheduledFor, isActive])
+  @@unique([userId, date, isActive])
+}
+
+
