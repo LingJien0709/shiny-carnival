@@ -19,7 +19,7 @@ function App() {
   useEffect(() => {
     const savedName = localStorage.getItem('displayName');
     const savedDiscord = localStorage.getItem('discordHandle');
-    
+
     if (savedName && savedDiscord) {
       setDisplayName(savedName);
       setDiscordHandle(savedDiscord);
