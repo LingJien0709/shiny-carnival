@@ -1,148 +1,117 @@
-# 🚀 Deploy Now - Step by Step
+# Deploy to Railway + Vercel - Quick Guide
 
-Follow these exact steps to get your app live.
+Your Supabase database is set up and ready! Follow these steps to deploy.
 
-## Prerequisites
-- GitHub account
-- Supabase account (free)
-- Discord bot token
+## Supabase Connection String (URL Encoded)
 
-## Step 1: Push to GitHub (2 min)
-
-```bash
-# Initialize git if not already
-git init
-git add .
-git commit -m "Initial commit - Parking Reminder app"
-
-# Create repo on GitHub, then:
-git remote add origin https://github.com/YOUR_USERNAME/parking-reminder.git
-git push -u origin main
-```
-
-## Step 2: Set Up Supabase Database (3 min)
-
-1. Go to [supabase.com](https://supabase.com) → New Project
-2. Create project, save password
-3. Go to Settings → Database → Connection string (URI)
-4. Copy connection string
-5. Replace `[YOUR-PASSWORD]` with your password
-
-## Step 3: Deploy Backend to Railway (5 min)
-
-1. Go to [railway.app](https://railway.app) → Sign up with GitHub
-2. Click "New Project" → "Deploy from GitHub repo"
-3. Select your repository
-4. Click on the service → Settings
-5. Set **Root Directory**: `backend`
-6. Go to **Variables** tab, add:
+Use these in Railway environment variables:
 
 ```
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres
-DIRECT_URL=postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres
-DISCORD_BOT_TOKEN=your_discord_bot_token
-DISCORD_CHANNEL_ID=your_discord_channel_id
-DISCORD_WEBHOOK_SECRET=generate_with_openssl_rand_hex_32
+DATABASE_URL=postgresql://postgres:%23HRy_Q4b%2F3WHYK.@db.hdagywjyntbfaqjsdeww.supabase.co:5432/postgres
+DIRECT_URL=postgresql://postgres:%23HRy_Q4b%2F3WHYK.@db.hdagywjyntbfaqjsdeww.supabase.co:5432/postgres
+```
+
+**Note:** The password is URL-encoded (`#` → `%23`, `/` → `%2F`)
+
+## Step 1: Deploy Backend to Railway
+
+1. Go to [railway.app](https://railway.app) and sign up with GitHub
+2. Click **"New Project"** → **"Deploy from GitHub repo"**
+3. Select your `shiny-carnival` repository
+4. Railway will auto-detect Node.js
+5. Configure the service:
+   - **Root Directory**: `backend`
+   - **Start Command**: `npm start` (already configured in railway.json)
+6. Go to **Variables** tab and add these environment variables:
+
+```
+DATABASE_URL=postgresql://postgres:%23HRy_Q4b%2F3WHYK.@db.hdagywjyntbfaqjsdeww.supabase.co:5432/postgres
+DIRECT_URL=postgresql://postgres:%23HRy_Q4b%2F3WHYK.@db.hdagywjyntbfaqjsdeww.supabase.co:5432/postgres
 PORT=3001
 NODE_ENV=production
 TZ=Asia/Kuala_Lumpur
+DISCORD_BOT_TOKEN=your_discord_bot_token_here
+DISCORD_CHANNEL_ID=your_discord_channel_id_here
+DISCORD_WEBHOOK_SECRET=your_webhook_secret_here
 ```
 
-7. Railway will auto-deploy
-8. Wait for deployment, copy the URL (e.g., `https://your-app.railway.app`)
+7. Railway will automatically deploy
+8. Wait for deployment to complete
+9. **Copy the Railway backend URL** (e.g., `https://your-app.railway.app`)
 
-9. **Run migrations**: In Railway dashboard → Deployments → View Logs → Run:
-```bash
-cd backend && npx prisma migrate deploy
-```
+## Step 2: Run Database Migrations on Railway
 
-## Step 4: Deploy Frontend to Vercel (3 min)
+After Railway deployment completes:
 
-1. Go to [vercel.com](https://vercel.com) → Sign up with GitHub
-2. Click "Add New" → "Project"
-3. Import your GitHub repository
-4. Configure:
+1. In Railway dashboard → your service → **"Deployments"** → latest deployment
+2. Click **"View Logs"** or use Railway's built-in terminal
+3. Run:
+   ```bash
+   cd backend
+   npx prisma migrate deploy
+   ```
+
+   Or use Railway CLI:
+   ```bash
+   railway run --service your-service-name "cd backend && npx prisma migrate deploy"
+   ```
+
+**Note:** Migrations should already be applied (we did this locally), but this ensures Railway's Prisma client is generated.
+
+## Step 3: Deploy Frontend to Vercel
+
+1. Go to [vercel.com](https://vercel.com) and sign up with GitHub
+2. Click **"Add New"** → **"Project"**
+3. Import your `shiny-carnival` repository
+4. Configure build settings (already in vercel.json):
    - **Framework Preset**: Vite
    - **Root Directory**: `frontend`
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
-5. Add Environment Variable:
-   - **Name**: `VITE_API_URL`
-   - **Value**: Your Railway backend URL (from Step 3)
-6. Click "Deploy"
-7. Wait for deployment → Copy URL (e.g., `https://your-app.vercel.app`)
+5. Go to **Environment Variables** and add:
+   ```
+   VITE_API_URL=https://your-backend-url.railway.app
+   ```
+   (Replace with your actual Railway backend URL from Step 1)
+6. Click **"Deploy"**
+7. Vercel will provide a URL like `https://your-app.vercel.app`
 
-## Step 5: Update vercel.json (1 min)
+## Step 4: Verify Deployment
 
-Edit `vercel.json` and replace:
-```json
-"destination": "https://your-backend-url.railway.app/api/$1"
-```
-With your actual Railway URL.
+1. **Test Backend API:**
+   - Visit: `https://your-backend.railway.app/api/leaderboard`
+   - Should return: `[]` (empty array)
 
-Then push to GitHub:
-```bash
-git add vercel.json
-git commit -m "Update backend URL"
-git push
-```
+2. **Test Frontend:**
+   - Visit your Vercel URL
+   - Register a test user
+   - Check Supabase dashboard → **Table Editor** → `User` table to see the new user
 
-Vercel will auto-redeploy.
-
-## Step 6: Test Your Deployment
-
-1. Visit your Vercel URL
-2. Register a user
-3. Click "I'm at the office"
-4. Verify it works!
-
-## Your URLs
-
-- **Frontend**: `https://your-app.vercel.app`
-- **Backend**: `https://your-app.railway.app`
-- **API Endpoint**: `https://your-app.railway.app/api`
+3. **Test Full Flow:**
+   - Click "I'm at the office" to start a parking session
+   - Check `ParkingSession` table in Supabase
+   - Click "I've reparked my car" to test repark functionality
 
 ## Troubleshooting
 
-**Backend not working?**
-- Check Railway logs
-- Verify environment variables
-- Ensure migrations ran
+### Backend not starting on Railway
+- Check Railway logs for errors
+- Verify all environment variables are set correctly
+- Ensure `DATABASE_URL` uses URL-encoded password
 
-**Frontend can't connect?**
-- Check `VITE_API_URL` in Vercel
-- Verify backend URL is correct
-- Check browser console for errors
+### Frontend can't connect to backend
+- Verify `VITE_API_URL` in Vercel matches your Railway URL
+- Check Railway backend is running (visit the URL directly)
+- Check browser console for CORS errors
 
-**Database errors?**
-- Verify Supabase connection string
-- Check if migrations ran
-- Verify database is active
+### Database connection fails
+- Verify connection string in Railway environment variables
+- Check Supabase project is active (not paused)
+- Ensure password is URL-encoded correctly
 
 ## Next Steps
 
-1. Set up custom domain (optional)
-2. Configure Discord webhook
-3. Add monitoring
-4. Set up backups
-
-## Quick Commands Reference
-
-```bash
-# Generate webhook secret
-openssl rand -hex 32
-
-# Test backend locally
-cd backend && npm start
-
-# Test frontend locally  
-cd frontend && npm run dev
-
-# Run migrations
-cd backend && npx prisma migrate deploy
-```
-
----
-
-**That's it!** Your app should now be live. Share the Vercel URL with your team! 🎉
-
+- Set up Discord bot token and channel ID for reminders
+- Configure webhook secret for Discord integration
+- Test reminder functionality
+- Set up custom domain (optional)
