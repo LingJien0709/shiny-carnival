@@ -19,12 +19,21 @@ function UserCard({
       const now = new Date();
       const klTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
       const currentHour = klTime.getHours();
-      setIsAfter5PM(currentHour >= 17);
+      const isAfter5 = currentHour >= 17;
+      setIsAfter5PM(isAfter5);
 
-      if (activeSession && !isAfter5PM) {
+      if (activeSession && !isAfter5) {
         const lastReparkTime = new Date(activeSession.lastReparkTime);
         const deadline = new Date(lastReparkTime.getTime() + 3 * 60 * 60 * 1000); // 3 hours
         const remaining = deadline - now;
+
+        console.log('Debug Timer:', {
+          now: now.toISOString(),
+          lastReparkTime: lastReparkTime.toISOString(),
+          deadline: deadline.toISOString(),
+          remaining,
+          isAfter5
+        });
 
         if (remaining > 0) {
           const hours = Math.floor(remaining / (1000 * 60 * 60));
@@ -42,7 +51,7 @@ function UserCard({
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, [activeSession, isAfter5PM]);
+  }, [activeSession]);
 
   const formatTime = (time) => {
     if (!time) return '00:00:00';
@@ -160,13 +169,12 @@ function UserCard({
 
         {/* CTA Button */}
         <button
-          className={`btn btn-lg w-full ${
-            isAfter5PM
+          className={`btn btn-lg w-full ${isAfter5PM
               ? 'btn-disabled'
               : activeSession
-              ? 'btn-success hover:scale-105 transition-transform'
-              : 'btn-primary hover:scale-105 transition-transform'
-          }`}
+                ? 'btn-success hover:scale-105 transition-transform'
+                : 'btn-primary hover:scale-105 transition-transform'
+            }`}
           onClick={handleButtonClick}
           disabled={isAfter5PM}
         >
@@ -192,5 +200,7 @@ function UserCard({
 }
 
 export default UserCard;
+
+
 
 

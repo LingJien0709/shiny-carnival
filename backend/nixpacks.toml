@@ -10,3 +10,5 @@ cmds = ["echo 'Build complete'"]
 [start]
 cmd = "cd backend && npm start"
 
+
+

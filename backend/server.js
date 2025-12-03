@@ -21,7 +21,7 @@ let discordClient = null;
 if (process.env.DISCORD_BOT_TOKEN) {
   discordClient = new Client({
     intents: [
-      GatewayIntentBits.Guilds, 
+      GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.GuildMembers
     ]
@@ -40,19 +40,19 @@ if (process.env.DISCORD_BOT_TOKEN) {
 function verifyDiscordWebhook(req, res, next) {
   const signature = req.headers['x-discord-signature'];
   const timestamp = req.headers['x-discord-timestamp'];
-  
+
   if (!signature || !timestamp) {
     return res.status(401).json({ error: 'Missing Discord signature headers' });
   }
 
   const body = JSON.stringify(req.body);
   const secret = process.env.DISCORD_WEBHOOK_SECRET;
-  
+
   if (!secret) {
     console.warn('DISCORD_WEBHOOK_SECRET not set, skipping signature verification');
     return next();
   }
-  
+
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(timestamp + body);
   const calculatedSignature = hmac.digest('hex');
@@ -66,15 +66,12 @@ function verifyDiscordWebhook(req, res, next) {
 
 // Helper: Get current date in Asia/Kuala_Lumpur timezone (YYYY-MM-DD)
 function getCurrentDate() {
-  const now = new Date();
-  const klTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
-  return klTime.toISOString().split('T')[0];
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
 }
 
-// Helper: Get current time in Asia/Kuala_Lumpur timezone
+// Helper: Get current time (UTC)
 function getCurrentTime() {
-  const now = new Date();
-  return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+  return new Date();
 }
 
 // Helper: Check if current time is after 5 PM (17:00) in KL timezone
@@ -125,32 +122,32 @@ function calculateReminderTime(reparkTime) {
 // Helper: Check if reminder should be scheduled
 function shouldScheduleReminder(reparkTime) {
   const now = getCurrentTime();
-  
+
   // Don't schedule if already after 5 PM
   if (isAfter5PM(now)) {
     return false;
   }
-  
+
   // Don't schedule on weekends or holidays
   if (!shouldApplyParkingRules(now)) {
     return false;
   }
-  
+
   const { deadline } = calculateReminderTime(reparkTime);
   const klDeadline = new Date(deadline.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
-  
+
   // Don't schedule if deadline is after 5 PM
   if (klDeadline.getHours() >= 17) {
     return false;
   }
-  
+
   // Don't schedule if deadline crosses to next day (outlier handling)
   const reparkDate = getCurrentDate();
-  const deadlineDate = klDeadline.toISOString().split('T')[0];
+  const deadlineDate = klDeadline.toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
   if (deadlineDate !== reparkDate) {
     return false; // Crosses midnight, don't schedule
   }
-  
+
   return true;
 }
 
@@ -164,15 +161,15 @@ async function sendParkingReminder(discordHandle, displayName, discordUserId = n
   try {
     const channel = await discordClient.channels.fetch(process.env.DISCORD_CHANNEL_ID);
     let message = `⏰ **Parking Reminder for ${displayName}**\n\n`;
-    
+
     if (discordUserId) {
       message += `<@${discordUserId}> `;
     } else if (discordHandle) {
       message += `@${discordHandle} `;
     }
-    
+
     message += `\nYour 3 hour free parking is almost up (20 minutes remaining). Please repark your car to avoid charges (RM 3 per hour).`;
-    
+
     await channel.send(message);
     console.log(`Sent Discord reminder to ${discordHandle || discordUserId}`);
   } catch (error) {
@@ -184,7 +181,7 @@ async function sendParkingReminder(discordHandle, displayName, discordUserId = n
 app.post('/api/webhook/discord/user', verifyDiscordWebhook, async (req, res) => {
   try {
     const { userId, username, discriminator, displayName, globalName } = req.body;
-    
+
     if (!userId || !username) {
       return res.status(400).json({ error: 'Discord userId and username are required' });
     }
@@ -251,7 +248,7 @@ app.post('/api/webhook/discord/user', verifyDiscordWebhook, async (req, res) => 
 app.post('/api/user', async (req, res) => {
   try {
     const { displayName, discordHandle, discordUserId } = req.body;
-    
+
     if (!displayName || !discordHandle) {
       return res.status(400).json({ error: 'Display name and Discord handle are required' });
     }
@@ -263,15 +260,15 @@ app.post('/api/user', async (req, res) => {
     if (user) {
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { 
+        data: {
           discordHandle,
           discordUserId: discordUserId || user.discordUserId
         }
       });
     } else {
       user = await prisma.user.create({
-        data: { 
-          displayName, 
+        data: {
+          displayName,
           discordHandle,
           discordUserId: discordUserId || null
         }
@@ -289,7 +286,7 @@ app.post('/api/user', async (req, res) => {
 app.get('/api/me', async (req, res) => {
   try {
     const { displayName } = req.query;
-    
+
     if (!displayName) {
       return res.status(400).json({ error: 'Display name is required' });
     }
@@ -346,15 +343,15 @@ app.get('/api/leaderboard', async (req, res) => {
 app.post('/api/parking/start', async (req, res) => {
   try {
     const { displayName } = req.body;
-    
+
     if (!displayName) {
       return res.status(400).json({ error: 'Display name is required' });
     }
 
     // Check if parking rules apply today
     if (!shouldApplyParkingRules()) {
-      return res.status(400).json({ 
-        error: 'Parking is free today (weekend/holiday/after 5 PM)' 
+      return res.status(400).json({
+        error: 'Parking is free today (weekend/holiday/after 5 PM)'
       });
     }
 
@@ -412,17 +409,17 @@ app.post('/api/parking/start', async (req, res) => {
 app.post('/api/parking/repark', async (req, res) => {
   try {
     const { displayName } = req.body;
-    
+
     if (!displayName) {
       return res.status(400).json({ error: 'Display name is required' });
     }
 
     const now = getCurrentTime();
-    
+
     // Check if parking rules still apply
     if (!shouldApplyParkingRules(now)) {
-      return res.status(400).json({ 
-        error: 'Parking is free now (weekend/holiday/after 5 PM), no need to repark' 
+      return res.status(400).json({
+        error: 'Parking is free now (weekend/holiday/after 5 PM), no need to repark'
       });
     }
 
@@ -450,8 +447,8 @@ app.post('/api/parking/repark', async (req, res) => {
     // Check if 3 hours have passed (shouldn't repark if already past deadline)
     const deadline = new Date(session.lastReparkTime.getTime() + 3 * 60 * 60 * 1000);
     if (now >= deadline) {
-      return res.status(400).json({ 
-        error: '3 hour window has passed. Please start a new session.' 
+      return res.status(400).json({
+        error: '3 hour window has passed. Please start a new session.'
       });
     }
 
@@ -501,7 +498,7 @@ app.post('/api/parking/repark', async (req, res) => {
 app.post('/api/discord/test', async (req, res) => {
   try {
     const { discordHandle, displayName, discordUserId } = req.body;
-    
+
     if (!discordHandle || !displayName) {
       return res.status(400).json({ error: 'Discord handle and display name are required' });
     }
@@ -519,12 +516,12 @@ cron.schedule('* * * * *', async () => {
   try {
     const now = getCurrentTime();
     const today = getCurrentDate();
-    
+
     // Skip if parking rules don't apply (weekend/holiday/after 5 PM)
     if (!shouldApplyParkingRules(now)) {
       return; // Don't send reminders on weekends/holidays/after 5 PM
     }
-    
+
     // Find sessions that need reminders
     const sessionsToRemind = await prisma.parkingSession.findMany({
       where: {
@@ -546,36 +543,36 @@ cron.schedule('* * * * *', async () => {
         const sessionTime = new Date(session.lastReparkTime);
         const deadline = new Date(sessionTime.getTime() + 3 * 60 * 60 * 1000);
         const timeRemaining = deadline - now;
-        
+
         // Only send if:
         // 1. Still before 5 PM
         // 2. Still within the 3 hour window
         // 3. At least 20 minutes before deadline (reminder window)
         if (!isAfter5PM(now) && timeRemaining > 0 && timeRemaining <= 20 * 60 * 1000) {
           await sendParkingReminder(
-            session.user.discordHandle, 
+            session.user.discordHandle,
             session.user.displayName,
             session.user.discordUserId
           );
-          
+
           await prisma.parkingSession.update({
             where: { id: session.id },
             data: {
               reminderSentAt: now
             }
           });
-          
+
           console.log(`Reminder sent for ${session.user.displayName} at ${now.toISOString()}`);
         }
       } catch (error) {
         console.error(`Error processing reminder for session ${session.id}:`, error);
       }
     }
-    
+
     // Clean up old inactive sessions (older than 7 days)
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
-    
+
     await prisma.parkingSession.updateMany({
       where: {
         isActive: false,
@@ -587,7 +584,7 @@ cron.schedule('* * * * *', async () => {
         isActive: false
       }
     });
-    
+
   } catch (error) {
     console.error('Error in reminder cron job:', error);
   }

@@ -101,3 +101,5 @@ Quick version:
 - Read `DISCORD_WEBHOOK_SETUP.md` for Discord integration
 - Read `MIGRATION_GUIDE.md` if migrating from SQLite
 
+
+

@@ -46,3 +46,5 @@ CREATE UNIQUE INDEX "ParkingSession_userId_date_isActive_key" ON "ParkingSession
 -- AddForeignKey
 ALTER TABLE "ParkingSession" ADD CONSTRAINT "ParkingSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+
+

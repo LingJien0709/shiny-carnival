@@ -66,6 +66,31 @@ function App() {
       setIsLoading(false);
     } catch (error) {
       console.error('Error loading user:', error);
+
+      // If user not found (404) but we have local data, try to re-create user
+      if (error.response?.status === 404 && name) {
+        console.log('User not found in DB, attempting to re-create...');
+        try {
+          const savedDiscord = localStorage.getItem('discordHandle');
+          if (savedDiscord) {
+            await axios.post(`${API_BASE}/user`, {
+              displayName: name,
+              discordHandle: savedDiscord
+            });
+
+            // Retry loading user
+            const response = await axios.get(`${API_BASE}/me`, {
+              params: { displayName: name }
+            });
+            setUser(response.data.user);
+            setActiveSession(response.data.activeSession);
+            console.log('User re-created successfully');
+          }
+        } catch (createError) {
+          console.error('Failed to re-create user:', createError);
+        }
+      }
+
       setIsLoading(false);
     }
   };
@@ -98,7 +123,8 @@ function App() {
       await loadLeaderboard();
     } catch (error) {
       console.error('Error starting parking:', error);
-      alert('Failed to start parking session. Please try again.');
+      const errorMsg = error.response?.data?.error || 'Failed to start parking session. Please try again.';
+      alert(errorMsg);
     }
   };
 
